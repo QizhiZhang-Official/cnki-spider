@@ -1,3 +1,4 @@
+import codecs
 import requests
 from bs4 import BeautifulSoup
 import time
@@ -11,21 +12,13 @@ SEARCH_PARAMS = {
     'field_region_target_id': 'All'
 }
 
-# 请求头：伪装成浏览器
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36'
 }
 
-# 延迟设置（秒），避免请求过快
-DELAY = 5
-
-# 输出文件
+DELAY = 2
 OUTPUT_FILE = 'faa_drone_press_releases.csv'
-
-# 最大页数限制（防止无限翻页，可设为 None 表示不限）
-MAX_PAGES = 10  # FAA 页面一般不会太多页，10 足够
-# ============================================
-
+MAX_PAGES = 10  # 最大翻页数
 
 def get_article_data(link):
     """获取单个新闻详情页的内容"""
@@ -34,22 +27,36 @@ def get_article_data(link):
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        # 提取正文（常见 class: .field-name-body 或 .article-body）
-        content_elem = soup.select_one('.field-name-body')
-        content = content_elem.get_text(strip=True) if content_elem else "No content found."
+        # ✅ 提取日期
+        date_div = soup.select_one('div.mb-4')
+        pub_date = date_div.get_text(strip=True) if date_div else "Unknown"
 
-        # 提取发布日期（通常在 .date-display-single）
-        date_elem = soup.select_one('.date-display-single')
-        pub_date = date_elem.get('content') if date_elem else "Unknown"
+        # ✅ 提取正文：只处理 mb-4.clearfix 的直接子元素
+        content_div = soup.select_one('div.mb-4.clearfix')
+        if not content_div:
+            content = "No content found."
+        else:
+            # 获取所有直接子元素（包括 p, h3, ul, etc.）
+            children = content_div.children
+            content_lines = []
+            for child in children:
+                if child.name:  # 确保是标签元素（不是文本节点）
+                    text = child.get_text(strip=False)  # 保留原始空格和换行
+                    if text.strip():
+                        content_lines.append(text)
+
+            content = '\n\n'.join(content_lines)
+            
+            content = content.replace('\n\n\n', '\n\n')
 
         return pub_date, content
+
     except Exception as e:
         print(f"   ❌ 获取详情失败 {link}: {e}")
         return "Error", "Failed to retrieve content"
 
 
 def scrape_faa_press_releases():
-    """主函数：爬取所有 drone 相关新闻稿"""
     articles = []
     page = 0
     has_next = True
@@ -57,7 +64,6 @@ def scrape_faa_press_releases():
     print("🚀 开始爬取 FAA 新闻稿...")
 
     while has_next and (MAX_PAGES is None or page < MAX_PAGES):
-        # 构造分页 URL
         params = SEARCH_PARAMS.copy()
         if page > 0:
             params['page'] = page
@@ -70,8 +76,8 @@ def scrape_faa_press_releases():
             response.raise_for_status()
             soup = BeautifulSoup(response.text, 'html.parser')
 
-            # 查找所有新闻条目（标题链接）
-            entries = soup.select('.view-content .card-title a')
+            # ✅ 重点修改：正确选择每个新闻条目
+            entries = soup.select('.views-row')
 
             if not entries:
                 print("   🛑 未找到新闻条目，可能已到最后一页。")
@@ -80,8 +86,13 @@ def scrape_faa_press_releases():
             print(f"   ✅ 找到 {len(entries)} 条新闻，开始抓取详情...")
 
             for entry in entries:
-                title = entry.get_text(strip=True)
-                href = entry['href']
+                # 提取标题和链接
+                title_elem = entry.select_one('.views-field-title a')
+                if not title_elem:
+                    continue  # 跳过无标题项
+
+                title = title_elem.get_text(strip=True)
+                href = title_elem['href']
                 link = f"https://www.faa.gov{href}"
 
                 print(f"   📄 正在抓取: {title}")
@@ -93,14 +104,14 @@ def scrape_faa_press_releases():
                     'content': content
                 })
 
-                time.sleep(DELAY)  # 每抓一个详情页暂停
+                time.sleep(DELAY)
 
-            # 判断是否有下一页（检查“Next”按钮）
-            next_btn = soup.find('a', text='›')
+            # 判断是否有下一页
+            next_btn = soup.find('a', string='›')
             has_next = bool(next_btn)
 
             page += 1
-            time.sleep(DELAY)  # 每翻一页暂停
+            time.sleep(DELAY)
 
         except Exception as e:
             print(f"   ❌ 请求失败 {list_url}: {e}")
@@ -108,13 +119,13 @@ def scrape_faa_press_releases():
 
     # 保存结果
     with open(OUTPUT_FILE, 'w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=['title', 'date', 'url', 'content'])
-        writer.writeheader()
-        writer.writerows(articles)
+        with codecs.open(OUTPUT_FILE, 'w', encoding='utf-8-sig') as f:
+            writer = csv.DictWriter(f, fieldnames=['title', 'date', 'url', 'content'])
+            writer.writeheader()
+            writer.writerows(articles)
 
     print(f"\n✅ 爬取完成！共获取 {len(articles)} 篇新闻稿，已保存至 {OUTPUT_FILE}")
 
 
-# =================== 运行脚本 ===================
 if __name__ == '__main__':
     scrape_faa_press_releases()
