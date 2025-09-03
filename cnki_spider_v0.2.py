@@ -45,7 +45,52 @@ def options_filter(driver):
             option.find_element(By.TAG_NAME, "i").click()
             time.sleep(1)
             
-    time.sleep(5)
+    time.sleep(1)
+
+
+def search(driver):
+    search_txt = driver.find_element(By.ID, "txt_SearchText")
+    search_txt.send_keys("低空经济")
+    search_btn = driver.find_element(By.CLASS_NAME, "search-btn")
+    search_btn.click()
+    
+    time.sleep(1)
+
+
+def get_all_themes(driver):
+    main_themes = driver.find_element("css selector", "dd[tit='主要主题']")
+    
+    btn = main_themes.find_element("css selector", "a[class='btn']")
+    btn.click()
+    
+    themes = main_themes.find_elements("css selector", "ul > li > input")
+    
+    themes_list = []
+    for theme in themes:
+        themes_list.append(theme.accessible_name)
+
+    return themes_list
+
+
+def get_data_by_themes(driver, themes):
+    for theme in themes:
+        main_themes = driver.find_element("css selector", "dd[tit='主要主题']")
+        checkbox = main_themes.find_element("css selector", f"input[value='{theme}']")
+        checkbox.click()
+        
+        # data = driver.find_element("css selector", "table[class='result-table-list']")
+        # data = data.find_element("css selector", "tbody")
+        name_element = driver.find_elements("css selector", "td[class='f14'] a")
+        name_list = []
+        for name in name_element:
+            name_list.append(name.text)
+        print(name_list)
+        
+        main_themes = driver.find_element("css selector", "dd[tit='主要主题']")
+        checkbox = main_themes.find_element("css selector", f"input[value='{theme}']")
+        checkbox.click()
+    
+    
 
 
 def main():
@@ -58,6 +103,12 @@ def main():
     time.sleep(3)
     
     options_filter(driver)
+    
+    search(driver)
+    
+    themes = get_all_themes(driver)
+    
+    get_data_by_themes(driver, themes)
 
 
 if __name__ == '__main__':
