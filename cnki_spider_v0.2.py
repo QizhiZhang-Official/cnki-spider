@@ -77,10 +77,11 @@ def get_data_by_themes(driver, themes):
         main_themes = driver.find_element("css selector", "dd[tit='主要主题']")
         checkbox = main_themes.find_element("css selector", f"input[value='{theme}']")
         checkbox.click()
+        time.sleep(1)
         
-        # data = driver.find_element("css selector", "table[class='result-table-list']")
-        # data = data.find_element("css selector", "tbody")
-        name_element = driver.find_elements("css selector", "td[class='f14'] a")
+        data = driver.find_element("css selector", "table[class='result-table-list']")
+        data = data.find_element("css selector", "tbody")
+        name_element = data.find_elements("css selector", "a[class='fz14']")
         name_list = []
         for name in name_element:
             name_list.append(name.text)
@@ -89,6 +90,7 @@ def get_data_by_themes(driver, themes):
         main_themes = driver.find_element("css selector", "dd[tit='主要主题']")
         checkbox = main_themes.find_element("css selector", f"input[value='{theme}']")
         checkbox.click()
+        time.sleep(1)
     
     
 
