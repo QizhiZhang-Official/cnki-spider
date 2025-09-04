@@ -17,7 +17,7 @@ def setup_driver():
     edge_options.add_argument("--disable-dev-shm-usage")
     # edge_options.add_argument('--headless')
 
-    service = Service(executable_path=r'./msedgedriver.exe')
+    service = Service(executable_path=os.path.join(os.getcwd(), 'msedgedriver.exe'))
 
     driver = webdriver.Edge(service=service, options=edge_options)
     
@@ -142,12 +142,27 @@ def get_data_by_themes(driver, themes):
             download_list = []
             for download in download_element:
                 download_list.append(download.text)
+            
+            # abstract
+            abstract_list = []
+            for name in name_element:
+                name.click()
+                time.sleep(1)
+                driver.switch_to.window(driver.window_handles[-1])
+                
+                doc = driver.find_element("css selector", "div[class='doc']")
+                abstract = doc.find_element("css selector", "span[class='abstract-text']")
+                abstract_list.append(abstract.text)
+                
+                driver.close()
+                driver.switch_to.window(driver.window_handles[0])
                     
             # 合并所有元素
             data_df = pd.DataFrame({
                 'theme': [theme] * len(name_list),
                 'name': name_list,
                 'author': author_list,
+                'abstract': abstract_list,
                 'source': source_list,
                 'date': date_list,
                 'database': database_list,
@@ -155,6 +170,8 @@ def get_data_by_themes(driver, themes):
                 'download': download_list
             })
             all_data_df = pd.concat([all_data_df, data_df], ignore_index=True)
+            
+            break
             
             # 判断是否有下一页
             try:
@@ -196,7 +213,7 @@ def main():
     data = get_data_by_themes(driver, themes)
     
     # 保存
-    data.to_csv(os.path.join(os.getcwd(), 'cnki.csv'), encoding='utf-8-sig', index=False)
+    data.to_csv(os.path.join(os.getcwd(), 'output', 'cnki.csv'), encoding='utf-8-sig', index=False)
 
 
 if __name__ == '__main__':
