@@ -81,7 +81,7 @@ def get_all_themes(driver):
     return themes_list
 
 
-def get_data_by_themes(driver, themes, is_next_page):
+def get_data_by_themes(driver, themes, next_page):
     all_data_df = pd.DataFrame()
     
     display_select = driver.find_element("css selector", "div[class='statistic']")
@@ -181,7 +181,7 @@ def get_data_by_themes(driver, themes, is_next_page):
             })
             all_data_df = pd.concat([all_data_df, data_df], ignore_index=True)
             
-            if is_next_page:
+            if next_page:
                 try:
                     pages = driver.find_element("css selector", "div[class=pages]")
                     next_page = pages.find_element("css selector", "a[class=pagesnums]")
@@ -214,7 +214,7 @@ def main():
     # 爬虫配置
     URL = 'https://www.cnki.net/'
     SEARCH_KEY = '低空经济'
-    IS_NEXT_PAGE = False
+    NEXT_PAGE = False
     
     # 初始化浏览器
     driver = setup_driver()
@@ -227,7 +227,7 @@ def main():
     # 获取所有主题分类
     themes = get_all_themes(driver)
     # 获取所有数据
-    data = get_data_by_themes(driver, themes, IS_NEXT_PAGE)
+    data = get_data_by_themes(driver, themes, NEXT_PAGE)
     # 保存
     save_data(data, SAVE_DIR, SAVE_NAME)
 

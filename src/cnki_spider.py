@@ -141,7 +141,7 @@ def get_all_themes(driver):
     return themes_list
 
 
-def get_data_by_themes(driver, themes, is_next_page):
+def get_data_by_themes(driver, themes, next_page):
     """
     根据给定的主题列表，依次筛选并爬取每个主题下的文献数据。
     
@@ -275,8 +275,8 @@ def get_data_by_themes(driver, themes, is_next_page):
             # 将临时 DataFrame 添加到总的数据 DataFrame 中
             all_data_df = pd.concat([all_data_df, data_df], ignore_index=True)
             
-            # --- 如果 is_next_page 为 True，则检查并处理下一页 ---
-            if is_next_page:
+            # --- 如果 next_page 为 True，则检查并处理下一页 ---
+            if next_page:
                 try:
                     # 找到分页导航区域
                     pages = driver.find_element("css selector", "div[class=pages]")
@@ -327,7 +327,7 @@ def main():
     # 0.1 爬虫配置
     URL = 'https://www.cnki.net/'  # 知网的链接
     SEARCH_KEY = '低空经济'  # 搜索的关键词
-    IS_NEXT_PAGE = False  # True: 爬取所有页数 / False: 只爬取第一页
+    NEXT_PAGE = False  # True: 爬取所有页数 / False: 只爬取第一页
     
     
     # 1. 初始化浏览器
@@ -343,7 +343,7 @@ def main():
     # 6. 
     
     # 7. 获取所有数据
-    data = get_data_by_themes(driver, themes, IS_NEXT_PAGE)
+    data = get_data_by_themes(driver, themes, NEXT_PAGE)
     # 8. 保存
     save_data(data, SAVE_DIR, SAVE_NAME)
 
