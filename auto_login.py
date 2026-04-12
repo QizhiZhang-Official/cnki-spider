@@ -1,100 +1,79 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.edge.service import Service
-from selenium.webdriver.edge.options import Options as EdgeOptions
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
+import requests
 import time
+import platform
+import subprocess
 
-def setup_driver():
-    edge_options = EdgeOptions()
-    edge_options.add_argument("--start-maximized")
-    edge_options.add_argument("--disable-extensions")
-    edge_options.add_argument("--disable-gpu")
-    edge_options.add_argument("--no-sandbox")
-    edge_options.add_argument("--disable-dev-shm-usage")
-
-    service = Service(executable_path=r'./msedgedriver.exe')
-    driver = webdriver.Edge(service=service, options=edge_options)
-    return driver
-
-def login_with_iframe(driver, account, password):
-    wait = WebDriverWait(driver, 15)
+def is_network_connected(host="www.baidu.com", timeout=3):
+    """
+    使用系统 ping 命令检测网络连通性。
+    返回 True 表示能 ping 通，False 表示不通。
+    """
+    # 根据操作系统选择参数
+    param = "-n" if platform.system().lower() == "windows" else "-c"
+    timeout_param = "-w" if platform.system().lower() == "windows" else "-W"
 
     try:
-        # 1. 等待页面加载完成
-        print("🔍 等待页面加载...")
-        wait.until(EC.title_contains("连接到网络"))
+        # Windows: ping -n 1 -w 3000 www.baidu.com
+        # Linux/macOS: ping -c 1 -W 3 www.baidu.com
+        if platform.system().lower() == "windows":
+            # Windows 的 -w 单位是毫秒
+            result = subprocess.run(
+                ["ping", param, "1", timeout_param, str(timeout * 1000), host],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+        else:
+            # Linux/macOS 的 -W 单位是秒
+            result = subprocess.run(
+                ["ping", param, "1", timeout_param, str(timeout), host],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+        return result.returncode == 0
+    except Exception:
+        return False
 
-        # 2. 查找并等待 iframe 出现
-        print("🔍 等待 iframe 加载...")
-        iframe = wait.until(
-            EC.presence_of_element_located((By.NAME, "c"))
-        )
-        print("✅ iframe 已找到")
+# 请根据实际情况调整参数
+url = "http://192.168.100.200/drcom/login"
 
-        # 3. 切换到 iframe
-        print("🔄 正在切换到 iframe...")
-        driver.switch_to.frame(iframe)
-        print("✅ 已切换到 iframe")
+params = {
+    "callback": "dr1003",
+    "DDDDD": "2024022251",        # 你的账号
+    "upass": "055313@gtm",      # 你的密码 (注意这里用了冒号，不是@)
+    "0MKKey": "123456",           # 固定值
+    "R1": "0",
+    "R2": "8",
+    "R3": "0",
+    "R6": "0",
+    "para": "00",
+    "v6ip": "",
+    "terminal_type": "1",
+    "lang": "zh-cn",
+    "jsVersion": "4.1.3",
+    "v": "10057"
+}
 
-        # 4. 等待登录表单元素出现（根据你提供的 HTML）
-        print("🔍 等待账号输入框...")
-        account_input = wait.until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "input[name='DDDDD']"))
-        )
-        print("✅ 账号输入框已找到")
+headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+    "Referer": "http://192.168.100.200/",
+    "Accept": "*/*",
+    "Accept-Encoding": "gzip, deflate",
+    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
+    "Connection": "keep-alive"
+}
 
-        print("🔍 等待密码输入框...")
-        password_input = wait.until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "input[name='upass']"))
-        )
-        print("✅ 密码输入框已找到")
+try:
+    response = requests.get(url, params=params, headers=headers, timeout=10)
+    print("状态码:", response.status_code)
+    print("响应头:", response.headers)
+    print("响应内容 (前 500 字符):")
+    print(response.text[:500])
+except Exception as e:
+    print("请求失败:", e)
 
-        # 5. 填写账号密码
-        account_input.clear()
-        account_input.send_keys(account)
-        print("✅ 账号已填写")
 
-        password_input.clear()
-        password_input.send_keys(password)
-        print("✅ 密码已填写")
-
-        # 6. 点击登录按钮
-        print("🔍 等待登录按钮...")
-        login_btn = wait.until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "input[name='0MKKey']"))
-        )
-        login_btn.click()
-        print("✅ 已点击登录按钮")
-
-        # 7. 等待登录结果
-        time.sleep(3)
-        print("当前 URL:", driver.current_url)
-
-    except TimeoutException as e:
-        print("❌ 超时异常！可能是 iframe 未加载或元素未找到")
-        print("当前页面源码片段：")
-        print(driver.page_source[:500])
-        raise
-    except Exception as e:
-        print("❌ 其他异常:", str(e))
-        raise
-
-def main():
-    account = '2024022251'
-    password = '055313@gtm'
-
-    driver = setup_driver()
-    driver.get("https://192.168.100.200/")
-
-    print("当前 URL:", driver.current_url)
-    print("页面标题:", driver.title)
-
-    login_with_iframe(driver, account, password)
-
-    driver.quit()
-
-if __name__ == '__main__':
-    main()
+# 使用示例
+if is_network_connected("www.baidu.com"):
+    print("恭喜！你已成功登录校园网。")
+else:
+    print("登录失败，或者网络未连接。")

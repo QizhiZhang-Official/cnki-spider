@@ -67,6 +67,9 @@ def search(driver, search_key):
 
 
 def get_all_themes(driver):
+    
+    
+    
     main_themes = driver.find_element("css selector", "dd[tit='主要主题']")
     
     btn = main_themes.find_element("css selector", "a[class='btn']")
@@ -224,6 +227,8 @@ def main():
     options_filter(driver)
     # 使用关键词搜索
     search(driver, SEARCH_KEY)
+    
+    
     # 获取所有主题分类
     themes = get_all_themes(driver)
     # 获取所有数据
