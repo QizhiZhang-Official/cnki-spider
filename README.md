@@ -1,6 +1,6 @@
-# cnki-spider
+# cnki-faa-spider
 
-**cnki-spider** 是一套面向"低空经济"研究主题的文献与新闻数据采集工具集，基于 Python 实现，包含两个相互独立的数据采集模块：面向中国知网（CNKI）的学术文献爬虫，以及面向美国联邦航空管理局（FAA）官网的无人机相关新闻稿爬虫。
+**cnki-faa-spider** 是一套面向"低空经济"研究主题的文献与新闻数据采集工具集，基于 Python 实现，包含两个相互独立的数据采集模块：面向中国知网（CNKI）的学术文献爬虫，以及面向美国联邦航空管理局（FAA）官网的无人机相关新闻稿爬虫。
 
 ## 目录
 
@@ -15,7 +15,7 @@
 ## 项目结构
 
 ```text
-cnki-spider/
+cnki-faa-spider/
 ├── src/
 │   ├── cnki_spider.py        # CNKI 文献爬虫（Selenium 实现）
 │   ├── cnki_spider_clean.py  # CNKI 文献爬虫（精简版，功能一致）
