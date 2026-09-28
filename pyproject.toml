@@ -1,0 +1,15 @@
+[project]
+name = "cnki-spider"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Qizhi Zhang", email = "Qizhi-Zhang@outlook.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "beautifulsoup4>=4.15.0",
+    "pandas>=3.0.6",
+    "requests>=2.34.2",
+    "selenium>=4.49.0",
+]
